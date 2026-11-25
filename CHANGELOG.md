@@ -2,10 +2,9 @@
 
 ## [v3.7.3] - 2026-11-25
 ### Changed
-- Rinominata la sezione principale e la navigazione radice da `Libreria Musicale` in **`ARTISTI`**.
-- Posizionato il link al repository GitHub (`https://github.com/erickbaldi/spotifuck-pwa`) **come ultima voce** dell'elenco informazioni/tooltip.
-- Rimosso il blocco HTML duplicato e ripuliti i marcatori di conflitto merge in `index.html`.
-- Aggiunto `.gitignore` per escludere file temporanei e cartelle di backup locali.
+- Rinominata l'etichetta principale e la navigazione radice da `Libreria Musicale` ad **`ARTISTI`**.
+- Aggiunto il link al repository GitHub (`https://github.com/erickbaldi/spotifuck-pwa`) come ultima voce dell'elenco informazioni nel box *About*.
+- Ripristinata e pulita la struttura di `index.html` sulla base `v3.7.2` mantenendo la PWA leggera.
 
 ## [v3.7.2]
 ### Fixed
