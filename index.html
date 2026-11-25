@@ -1,0 +1,1661 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="author" content="https://erickbaldi.github.io">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>spotiFUCK PWA</title>
+    <!-- Icone PWA / Favicon -->
+    <link rel="icon" type="image/png" href="pwa/spotifuck_logo_mini.png">
+    <link rel="apple-touch-icon" href="pwa/spotifuck_logo_mini.png">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- CryptoJS per token MD5 Subsonic -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        body { background-color: #0a0a0c; color: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Stile Evidenziato Traccia in Riproduzione */
+        .playing-card {
+            background: linear-gradient(135deg, rgba(185, 28, 28, 0.25) 0%, rgba(18, 18, 22, 0.95) 100%) !important;
+            border-color: rgba(239, 68, 68, 0.7) !important;
+            box-shadow: 0 0 12px rgba(239, 68, 68, 0.35);
+            transform: scale(1.01);
+        }
+
+        /* Splash Screen Animation Lampeggiante Rapida */
+        @keyframes fast-pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.35; transform: scale(0.95); }
+        }
+        .animate-fast-pulse {
+            animation: fast-pulse 0.8s infinite ease-in-out;
+        }
+
+        /* Animazione Progress Bar Splash */
+        @keyframes loading-progress {
+            0% { width: 10%; }
+            50% { width: 75%; }
+            100% { width: 95%; }
+        }
+        .animate-progress-bar {
+            animation: loading-progress 1.8s infinite ease-in-out;
+        }
+
+        #pwa-splash {
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+        #pwa-splash.fade-out {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        /* Modal Installazione PWA Animation */
+        #pwa-install-modal {
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        #pwa-install-modal.hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen overflow-hidden select-none">
+
+    <!-- SPLASH SCREEN CON LOGO, TESTO E PROGRESS BAR -->
+    <div id="pwa-splash" class="fixed inset-0 bg-[#0a0a0c] z-50 flex flex-col items-center justify-center p-6 text-center">
+        <img src="pwa/spotifuck_bckgnd_w.png" class="w-64 max-w-xs h-auto object-contain rounded-2xl shadow-2xl mb-6 animate-fast-pulse" alt="spotiFUCK Logo" onerror="this.src='pwa/spotifuck_logo_mini.png'">
+        <div class="flex flex-col items-center space-y-3 max-w-xs w-full">
+            <div class="text-red-500 font-semibold text-xs tracking-wider uppercase leading-relaxed px-2">
+                Connessione al database e caricamento libreria musicale in corso...
+            </div>
+            <div class="w-48 bg-gray-900 h-1.5 rounded-full overflow-hidden border border-red-900/40 shadow-inner">
+                <div class="bg-red-600 h-full rounded-full animate-progress-bar"></div>
+            </div>
+            <p class="text-[10px] text-gray-500 italic pt-1">
+                L'operazione potrebbe richiedere alcuni secondi a causa delle dimensioni della libreria.
+            </p>
+        </div>
+    </div>
+
+    <!-- POPUP MODALE DI INSTALLAZIONE PWA -->
+    <div id="pwa-install-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-[#1a1a22] border-2 border-red-600/80 rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl space-y-4 relative transform transition-all scale-100">
+            <button onclick="closeInstallBanner()" class="absolute top-3 right-3 text-gray-400 hover:text-white p-2 rounded-full transition cursor-pointer">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <div class="flex justify-center pt-2">
+                <img src="pwa/spotifuck_bckgnd_w.png" class="w-24 h-24 object-contain rounded-2xl border-2 border-amber-500/40 shadow-xl" alt="Icona App" onerror="this.src='pwa/spotifuck_logo_mini.png'">
+            </div>
+
+            <div class="space-y-1.5">
+                <h3 class="text-lg font-bold text-white">Installa spotiFUCK PWA</h3>
+                <p class="text-xs text-gray-300 leading-relaxed">
+                    Aggiungi l'applicazione alla schermata Home del tuo dispositivo per un accesso rapido ed un'esperienza a schermo intero.
+                </p>
+            </div>
+
+            <div class="pt-2 flex flex-col gap-2">
+                <button id="btn-install-pwa" class="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-xl text-sm transition shadow-lg cursor-pointer flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-download"></i> Installa Ora
+                </button>
+                <button onclick="closeInstallBanner()" class="w-full bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold py-2.5 rounded-xl text-xs transition cursor-pointer">
+                    Non ora
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- HEADER -->
+    <header class="flex items-center justify-between px-4 py-3 bg-[#121216] border-b border-red-900/30 shrink-0 relative z-30">
+        <div class="flex items-center space-x-2.5 cursor-pointer relative" onclick="toggleLogoTooltip(event)">
+            <img src="pwa/spotifuck_logo_mini.png" class="w-8 h-8 rounded-full object-cover border border-amber-500/50 shadow" alt="Logo" onerror="this.src='pwa/spotifuck_logo_mini.png'">
+            <div class="flex flex-col">
+                <h1 class="font-bold text-base leading-tight text-white">spotiFUCK <span class="text-xs text-amber-400 font-normal">PWA</span></h1>
+                <span id="app-version" class="text-[9px] text-gray-400 tracking-wider font-mono whitespace-nowrap">anywhere, anytime, just web!</span>
+            </div>
+
+            <!-- Tooltip / Box Info (About) -->
+            <div id="logo-tooltip" class="absolute left-0 top-12 w-72 bg-[#18181f] border border-red-600/40 rounded-2xl p-3.5 shadow-2xl hidden z-50 space-y-2.5 text-left text-gray-300" onclick="event.stopPropagation()">
+                <div class="flex items-center justify-between border-b border-gray-800 pb-1.5">
+                    <span class="text-xs font-bold text-amber-400 uppercase tracking-wider">About</span>
+                    <button onclick="closeLogoTooltip()" class="text-gray-400 hover:text-white p-1 text-xs cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <p class="text-xs italic font-serif text-amber-300 text-center tracking-wide py-0.5">“no fees, no advertising, no interruptions”</p>
+                <div class="text-[10px] text-gray-400 space-y-1 py-1 border-y border-gray-800">
+                    <p>• <strong>Formato libreria audio:</strong> MP3 (VBR / CBR 128 &tilde; 320 kbps)</p>
+                    <p>• <strong>Protocollo Server:</strong> Java 8 Jetty API v1.16.1</p>
+                    <p>• <strong>Architettura App:</strong> Progressive Web App (PWA) client-side</p>
+                </div>
+                <div class="flex items-center justify-between pt-1 text-[10px] text-gray-400">
+                    <span>Server: <a href="https://erick.ns0.it" target="_blank" class="text-amber-400 underline hover:text-amber-300">erick.ns0.it</a></span>
+                    <span>Versione App: <strong id="app-version-val" class="text-white font-mono">v3.7.2</strong></span>
+                </div>
+                <div class="pt-1 text-center border-t border-gray-800/60">
+                    <p class="text-[9px] text-gray-500 font-mono">powered with &#9829; by <a href="https://erickbaldi.github.io" target="_blank" class="text-red-400 underline hover:text-red-300">Erick</a></p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="flex items-center space-x-1">
+            <button onclick="loadMusicFolders()" class="text-gray-400 hover:text-white p-2 transition cursor-pointer relative z-40" title="Ricarica Libreria">
+                <i class="fa-solid fa-rotate text-lg"></i>
+            </button>
+            <button id="btn-header-starred" onclick="toggleStarredMode()" class="text-gray-400 hover:text-amber-400 p-2 transition cursor-pointer relative z-40" title="Preferiti">
+                <i class="fa-solid fa-star text-lg"></i>
+            </button>
+            <button onclick="toggleSettings()" class="text-gray-400 hover:text-white p-2 cursor-pointer relative z-40" title="Impostazioni">
+                <i class="fa-solid fa-gear text-xl"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="flex-1 overflow-y-auto pb-32 relative z-10">
+        
+        <!-- SEZIONE HOME -->
+        <section id="view-home" class="p-4 pt-2 space-y-4">
+            <div id="welcome-banner" class="bg-gradient-to-r from-red-950/50 to-amber-950/40 border border-red-500/30 rounded-2xl p-4 flex items-center justify-between shadow-lg relative z-20 my-2">
+                <div>
+                    <h2 class="font-bold text-base text-red-400">Autenticazione richiesta</h2>
+                    <p class="text-xs text-gray-300 mt-0.5">Inserisci le tue credenziali per connetterti al server di spotiFUCK</p>
+                </div>
+                <button onclick="openSettings()" class="bg-red-600 hover:bg-red-500 text-white font-semibold px-3 py-2 rounded-xl text-xs transition shadow cursor-pointer relative z-30">
+                    Accedi
+                </button>
+            </div>
+
+            <!-- Searchbar Fissa in alto durante lo scroll -->
+            <div class="sticky top-0 z-20 bg-[#0a0a0c] pt-2 pb-2">
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                        <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                    </span>
+                    <input type="text" id="search-input" placeholder="cerca artista..." oninput="handleSearch(this.value)" class="w-full bg-[#121216] border border-gray-800 rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-red-600 transition shadow-md">
+                </div>
+            </div>
+
+            <!-- Titolo Sezione Dinamico, Contatore e Pulsanti Azione -->
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2 overflow-hidden pr-2">
+                    <h3 id="section-title" class="font-bold text-sm text-amber-400 uppercase tracking-wider truncate">Libreria Musicale</h3>
+                    <span id="items-count-badge" class="text-[10px] bg-red-950/80 border border-red-500/40 text-red-300 px-2 py-0.5 rounded-full font-mono shrink-0">0</span>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <button id="btn-play-album" onclick="playCurrentAlbum()" class="text-xs bg-red-600 hover:bg-red-500 text-white font-semibold px-3 py-1.5 rounded-xl transition hidden flex items-center gap-1 shadow cursor-pointer">
+                        <i class="fa-solid fa-play"></i> Riproduci Album
+                    </button>
+                    <button id="btn-back-folders" onclick="goBackFolder()" class="text-xs bg-gray-800 hover:bg-gray-700 text-red-400 font-semibold px-3 py-1.5 border border-red-900/40 rounded-xl transition hidden flex items-center gap-1 shadow cursor-pointer">
+                        <i class="fa-solid fa-arrow-left"></i> Indietro
+                    </button>
+                </div>
+            </div>
+
+            <!-- Griglia Contenuti -->
+            <div id="content-grid" class="grid grid-cols-1 gap-2">
+                <div class="text-gray-500 text-xs text-center py-8">Inserisci le credenziali nelle impostazioni per visualizzare la musica.</div>
+            </div>
+        </section>
+
+        <!-- SEZIONE IMPOSTAZIONI -->
+        <section id="view-settings" class="p-4 space-y-4 hidden">
+            <div class="mb-2">
+                <h2 class="text-xl font-bold">Impostazioni Server</h2>
+            </div>
+            
+            <div class="bg-[#121216] border border-gray-800 rounded-2xl p-4 space-y-3 shadow-xl">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 mb-1">URL Server (Fisso)</label>
+                    <input type="text" id="setting-url" value="https://erick.ns0.it" readonly class="w-full bg-gray-950/80 border border-gray-800 rounded-xl px-3 py-2 text-sm text-gray-400 cursor-not-allowed focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 mb-1">Nome Utente</label>
+                    <input type="text" id="setting-user" placeholder="username" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-red-600">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 mb-1">Password</label>
+                    <input type="password" id="setting-pass" placeholder="••••••••" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-red-600">
+                </div>
+
+                <p class="text-[11px] text-gray-400 pt-1 leading-relaxed">
+                    Registrandoti o effettuando l'accesso accetti integralmente il nostro regolamento e i <a href="https://erick.ns0.it/icons/Termini_di_Servizio_e_Privacy_Policy.pdf" target="_blank" class="text-red-400 underline hover:text-red-300">Termini di Servizio e Privacy Policy</a>.
+                </p>
+                
+                <div class="pt-2 flex flex-wrap gap-2">
+                    <button onclick="saveSettings()" class="flex-1 bg-red-600 hover:bg-red-500 text-white font-bold py-2.5 rounded-xl text-sm transition shadow-lg cursor-pointer">Salva e Connetti</button>
+                    <a href="https://erick.ns0.it/register" target="_blank" class="bg-amber-600 hover:bg-amber-500 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition shadow-lg flex items-center justify-center gap-1.5 cursor-pointer">
+                        <i class="fa-solid fa-user-plus text-xs"></i> Registrati
+                    </a>
+                    <button onclick="logoutUser()" class="bg-gray-800 hover:bg-gray-700 text-red-400 font-semibold px-3 py-2.5 rounded-xl text-sm transition cursor-pointer" title="Disconnetti account">Logout</button>
+                </div>
+            </div>
+
+            <!-- Box Info PWA -->
+            <div class="bg-[#121216]/60 border border-amber-500/20 rounded-2xl p-3.5 space-y-2 shadow-md">
+                <p class="text-xs font-semibold text-amber-400 flex items-center gap-1.5">
+                    <i class="fa-solid fa-circle-info"></i> Cos'è una PWA?
+                </p>
+                <p class="text-[11px] text-gray-400 leading-relaxed">
+                    Una <strong class="text-white">Progressive Web App (PWA)</strong> è un'applicazione web sviluppata tramite specifiche API che consentono di offrire un'esperienza utente simile a un'app nativa. Ma con alcuni vantaggi come ad esempio: una interfaccia grafica meno appesantita e più essenziale, completamente dedicata allo streaming; nessun passaggio o dipendenza dagli app store; massima portabilità dato che funziona su qualsiasi dispositivo; aggiornamento tempo reale delle release; leggerezza e velocità d'uso dato che le PWA non occupano nessuno spazio nel tuo telefono!
+                    <a href="https://it.wikipedia.org/wiki/Progressive_web_app" target="_blank" class="text-red-400 underline hover:text-red-300">Approfondisci su Wikipedia</a>.
+                </p>
+                <p class="text-[11px] text-gray-400 leading-relaxed pt-1 border-t border-gray-800">
+                    <strong>Per un'esperienza ancora più completa e ricca di funzionalità si consiglia lo streaming diretto dal <a style="text-decoration:underline;" href="https://erick.ns0.it" target="_blank">server di spotiFUCK</a>.</strong>
+                </p>
+            </div>
+
+            <div id="connection-status" class="text-xs text-center text-gray-400"></div>
+        </section>
+
+    </main>
+
+    <!-- MINI PLAYER -->
+    <div id="mini-player" class="absolute bottom-16 left-2 right-2 bg-[#121216]/95 backdrop-blur border-2 border-red-500/60 rounded-2xl p-2.5 flex items-center justify-between shadow-2xl hidden z-40">
+        <div class="flex items-center space-x-3 overflow-hidden cursor-pointer flex-1" onclick="openFullPlayer()">
+            <img id="mini-cover" src="" class="w-11 h-11 rounded-xl object-cover bg-gray-800 shrink-0 border border-amber-500/30" alt="Cover">
+            <div class="overflow-hidden">
+                <h4 id="mini-title" class="font-bold text-sm truncate text-white">Titolo Brano</h4>
+                <p id="mini-artist" class="text-xs text-gray-400 truncate">Artista</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-2 ml-3 shrink-0">
+            <button id="mini-btn-play" onclick="togglePlay()" class="w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center shadow hover:bg-red-500 transition cursor-pointer">
+                <i class="fa-solid fa-play text-sm ml-0.5"></i>
+            </button>
+            <button onclick="nextTrack()" class="text-gray-300 hover:text-white p-2 cursor-pointer">
+                <i class="fa-solid fa-forward-step text-lg"></i>
+            </button>
+            <button onclick="clearQueue()" class="text-gray-500 hover:text-red-400 p-2 cursor-pointer" title="Svuota coda">
+                <i class="fa-solid fa-trash-can text-sm"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- FULL SCREEN PLAYER -->
+    <div id="full-player" class="absolute inset-0 bg-[#0a0a0c] z-50 flex flex-col justify-between p-4 sm:p-6 transform translate-y-full transition-transform duration-300 ease-in-out overflow-y-auto no-scrollbar">
+        <div class="flex items-center justify-between relative shrink-0">
+            <button onclick="closeFullPlayer()" class="text-gray-400 hover:text-white p-2 cursor-pointer">
+                <i class="fa-solid fa-chevron-down text-xl"></i>
+            </button>
+            <div class="text-center overflow-hidden px-2">
+                <p class="text-[10px] uppercase tracking-widest text-amber-400 font-bold">spotiFUCK Player</p>
+                <h4 id="full-album-name" class="text-xs text-gray-300 truncate">Nome Album</h4>
+            </div>
+            <div class="flex items-center gap-1 relative">
+                <button id="full-btn-star" onclick="toggleCurrentTrackStar()" class="text-gray-400 hover:text-amber-400 p-2 text-lg cursor-pointer">
+                    <i class="fa-regular fa-star"></i>
+                </button>
+                <button onclick="togglePlayerMenu()" class="text-gray-400 hover:text-white p-2 cursor-pointer"><i class="fa-solid fa-ellipsis-vertical text-xl"></i></button>
+                
+                <!-- Menu a tendina Svuota Coda -->
+                <div id="player-menu-dropdown" class="absolute right-0 top-10 w-40 bg-[#121216] border border-gray-800 rounded-xl shadow-2xl hidden z-50 overflow-hidden">
+                    <button onclick="clearQueue(); closePlayerMenu(); closeFullPlayer();" class="w-full text-left px-4 py-2.5 text-xs text-red-400 hover:bg-gray-800 flex items-center gap-2 cursor-pointer">
+                        <i class="fa-solid fa-trash-can"></i> Svuota Coda
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vista Copertina, Testo o Metatag -->
+        <div class="flex items-center justify-center my-auto py-2 relative w-full flex-1 min-h-[260px] max-h-[380px]">
+            <img id="full-cover" src="" class="w-56 h-56 sm:w-68 sm:h-68 rounded-3xl object-cover shadow-2xl border-2 border-red-600/50 transition-all duration-300" alt="Cover Album">
+            
+            <!-- Contenitore Testo (Lyrics) -->
+            <div id="lyrics-container" class="hidden absolute inset-0 bg-[#0a0a0c]/98 backdrop-blur border border-red-500/30 rounded-3xl p-5 overflow-y-auto no-scrollbar text-center flex flex-col items-center">
+                <p id="lyrics-text" class="text-xs sm:text-sm text-gray-200 leading-relaxed whitespace-pre-line w-full my-auto">Caricamento testo...</p>
+            </div>
+
+            <!-- Contenitore Metatag Brano -->
+            <div id="meta-container" class="hidden absolute inset-0 bg-[#0a0a0c]/98 backdrop-blur border border-red-500/30 rounded-3xl p-5 overflow-y-auto no-scrollbar text-center flex flex-col items-center justify-center">
+                <div id="meta-content" class="w-full space-y-2.5 text-xs text-gray-300">
+                    <!-- Popolato dinamicamente -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Pulsanti Toggle Vista (Testo / Metatag) -->
+        <div class="flex justify-center gap-2 my-1 shrink-0">
+            <button onclick="toggleLyricsView()" id="btn-toggle-lyrics" class="text-xs text-amber-400 hover:text-white bg-red-950/40 border border-red-500/30 px-3 py-1.5 rounded-full transition shadow cursor-pointer">
+                <i class="fa-solid fa-align-left mr-1"></i> Testo
+            </button>
+            <button onclick="toggleMetaView()" id="btn-toggle-meta" class="text-xs text-amber-400 hover:text-white bg-red-950/40 border border-red-500/30 px-3 py-1.5 rounded-full transition shadow cursor-pointer">
+                <i class="fa-solid fa-circle-info mr-1"></i> Metatag
+            </button>
+        </div>
+
+        <div class="space-y-3 shrink-0 pt-1">
+            <div class="flex justify-between items-center">
+                <div class="overflow-hidden pr-2">
+                    <h2 id="full-title" class="text-lg sm:text-xl font-bold text-white truncate">Titolo Brano</h2>
+                    <p id="full-artist" class="text-xs sm:text-sm text-gray-400 truncate">Artista</p>
+                </div>
+            </div>
+
+            <div class="space-y-1">
+                <input type="range" id="progress-bar" value="0" max="100" class="w-full h-1.5 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-red-600">
+                <div class="flex justify-between text-[11px] text-gray-400 font-medium">
+                    <span id="current-time">0:00</span>
+                    <span id="total-duration">0:00</span>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between px-2 sm:px-4 py-1">
+                <button id="btn-shuffle" onclick="toggleShuffle()" class="text-gray-400 hover:text-white text-lg transition cursor-pointer"><i class="fa-solid fa-shuffle"></i></button>
+                <button onclick="prevTrack()" class="text-gray-200 hover:text-white text-2xl transition cursor-pointer"><i class="fa-solid fa-backward-step"></i></button>
+                <button id="full-btn-play" onclick="togglePlay()" class="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-red-600 text-white flex items-center justify-center shadow-xl hover:bg-red-500 hover:scale-105 transition transform cursor-pointer">
+                    <i class="fa-solid fa-play text-xl sm:text-2xl ml-1"></i>
+                </button>
+                <button onclick="nextTrack()" class="text-gray-200 hover:text-white text-2xl transition cursor-pointer"><i class="fa-solid fa-forward-step"></i></button>
+                <button id="btn-repeat" onclick="toggleRepeat()" class="text-gray-400 hover:text-white text-lg transition cursor-pointer relative" title="Ripeti: Disattivo">
+                    <i class="fa-solid fa-repeat"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Elemento audio pulito senza attributi CORS conflittuali sui Blob URL -->
+    <audio id="audio-element"></audio>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // --- VERSIONE APPLICAZIONE (AGGIORNATA A V3.7.2) ---
+        const APP_VERSION = "v3.7.2";
+
+        // Credenziali con namespace isolato (pwa_sub_*) per evitare conflitti con la web app principale sullo stesso dominio
+        let serverConfig = {
+            url: "https://erick.ns0.it",
+            user: localStorage.getItem('pwa_sub_user') || localStorage.getItem('sub_user') || '',
+            pass: localStorage.getItem('pwa_sub_pass') || localStorage.getItem('sub_pass') || ''
+        };
+
+        let currentPlaylist = [];
+        let originalPlaylist = [];
+        let currentIndex = 0;
+        let showLyricsMode = false;
+        let showMetaMode = false;
+        let isShuffleActive = false;
+        let repeatMode = 0; // 0 = Off, 1 = Repeat All, 2 = Repeat One
+        
+        let navigationStack = [];
+        let currentFolderItems = []; 
+        let cachedArtistsItems = null;
+        const audioElement = document.getElementById('audio-element');
+
+        let scrobbleSent = false;
+        let scrobbleTimer = null;
+        let deferredPrompt = null;
+        let currentBlobUrl = null;
+
+        // --- CACHE IN MEMORIA PER BUFFERING E PREFETCH TRACCIA SUCCESSIVA ---
+        let blobCache = new Map();
+
+        // Determina il MIME type esplicito (cruciale per Safari, Chrome e Edge)
+        function getMimeTypeForTrack(track) {
+            const fmt = (track.format || 'MP3').toUpperCase();
+            if (fmt === 'FLAC') return 'audio/flac';
+            if (fmt === 'OGG') return 'audio/ogg';
+            if (fmt === 'M4A' || fmt === 'AAC') return 'audio/mp4';
+            if (fmt === 'WAV') return 'audio/wav';
+            return 'audio/mpeg';
+        }
+
+        // Scarica e tipizza il Blob audio isolando la sessione con credentials: 'omit'
+        async function fetchTypedAudioBlob(track) {
+            const response = await fetch(track.url, { credentials: 'omit' });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const rawBlob = await response.blob();
+            const mimeType = getMimeTypeForTrack(track);
+            if (!rawBlob.type || rawBlob.type === 'application/octet-stream') {
+                return new Blob([rawBlob], { type: mimeType });
+            }
+            return rawBlob;
+        }
+
+        // Prefetch in background della traccia successiva
+        async function prefetchNextTrack() {
+            if (currentIndex + 1 < currentPlaylist.length) {
+                const nextTrack = currentPlaylist[currentIndex + 1];
+                if (nextTrack && !blobCache.has(nextTrack.id)) {
+                    try {
+                        if (blobCache.size >= 2) {
+                            const firstKey = blobCache.keys().next().value;
+                            blobCache.delete(firstKey);
+                        }
+                        const typedBlob = await fetchTypedAudioBlob(nextTrack);
+                        blobCache.set(nextTrack.id, typedBlob);
+                    } catch (err) {
+                        console.log("Prefetch in background saltato:", err);
+                    }
+                }
+            }
+        }
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+        });
+
+        // Chiusura forzata dello streaming e rilascio player Subsonic in uscita dalla pagina
+        window.addEventListener('beforeunload', () => {
+            sendPlayerUpdate('stopped', '', 0);
+            audioElement.pause();
+            audioElement.src = "";
+            audioElement.load();
+        });
+
+        window.addEventListener('pagehide', () => {
+            sendPlayerUpdate('stopped', '', 0);
+            audioElement.pause();
+            audioElement.src = "";
+            audioElement.load();
+        });
+
+        // Chiusura automatica dei menu cliccando fuori
+        window.addEventListener('click', (e) => {
+            const dropdown = document.getElementById('player-menu-dropdown');
+            const menuBtn = dropdown ? dropdown.previousElementSibling : null;
+            if (dropdown && !dropdown.classList.contains('hidden')) {
+                if (!dropdown.contains(e.target) && menuBtn && !menuBtn.contains(e.target)) {
+                    dropdown.classList.add('hidden');
+                }
+            }
+
+            const tooltip = document.getElementById('logo-tooltip');
+            const logoContainer = tooltip ? tooltip.parentElement : null;
+            if (tooltip && !tooltip.classList.contains('hidden')) {
+                if (!logoContainer.contains(e.target)) {
+                    tooltip.classList.add('hidden');
+                }
+            }
+        });
+
+        function toggleLogoTooltip(e) {
+            e.stopPropagation();
+            const tooltip = document.getElementById('logo-tooltip');
+            if (tooltip) {
+                tooltip.classList.toggle('hidden');
+            }
+        }
+
+        function closeLogoTooltip() {
+            const tooltip = document.getElementById('logo-tooltip');
+            if (tooltip) tooltip.classList.add('hidden');
+        }
+
+        function showInstallBanner() {
+            if (!window.matchMedia('(display-mode: standalone)').matches && !window.navigator.standalone) {
+                const modal = document.getElementById('pwa-install-modal');
+                if (modal) modal.classList.remove('hidden');
+            }
+        }
+
+        function closeInstallBanner() {
+            const modal = document.getElementById('pwa-install-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const versionEl = document.getElementById('app-version-val');
+            if (versionEl) versionEl.innerText = APP_VERSION;
+
+            document.getElementById('setting-url').value = serverConfig.url;
+            if (serverConfig.user) {
+                document.getElementById('setting-user').value = serverConfig.user;
+            }
+            if (serverConfig.pass) {
+                document.getElementById('setting-pass').value = serverConfig.pass;
+            }
+            
+            const installBtn = document.getElementById('btn-install-pwa');
+            if (installBtn) {
+                installBtn.addEventListener('click', async () => {
+                    if (deferredPrompt) {
+                        deferredPrompt.prompt();
+                        const { outcome } = await deferredPrompt.userChoice;
+                        deferredPrompt = null;
+                        closeInstallBanner();
+                    } else {
+                        alert("Per installare l'app:\n- Su Android: apri il menu del browser e seleziona 'Aggiungi a schermata Home' o 'Installa app'.\n- Su iOS (Safari): tocca il tasto Condividi e seleziona 'Aggiungi a Home'.");
+                        closeInstallBanner();
+                    }
+                });
+            }
+
+            if (!serverConfig.user || !serverConfig.pass) {
+                hideSplashQuickly();
+                openSettings();
+                setTimeout(showInstallBanner, 1200);
+            } else {
+                loadMusicFolders();
+            }
+        });
+
+        function hideSplashQuickly() {
+            const splash = document.getElementById('pwa-splash');
+            if (splash) splash.classList.add('fade-out');
+        }
+
+        function openSettings() {
+            document.getElementById('view-home').classList.add('hidden');
+            document.getElementById('view-settings').classList.remove('hidden');
+        }
+
+        function closeSettings() {
+            document.getElementById('view-settings').classList.add('hidden');
+            document.getElementById('view-home').classList.remove('hidden');
+        }
+
+        function toggleSettings() {
+            const viewSettings = document.getElementById('view-settings');
+            if (viewSettings.classList.contains('hidden')) {
+                openSettings();
+            } else {
+                closeSettings();
+            }
+        }
+
+        function openFullPlayer() {
+            document.getElementById('full-player').classList.remove('translate-y-full');
+        }
+        function closeFullPlayer() {
+            document.getElementById('full-player').classList.add('translate-y-full');
+            document.getElementById('player-menu-dropdown').classList.add('hidden');
+            if (showLyricsMode) toggleLyricsView();
+            if (showMetaMode) toggleMetaView();
+        }
+        function togglePlayerMenu() {
+            document.getElementById('player-menu-dropdown').classList.toggle('hidden');
+        }
+        function closePlayerMenu() {
+            document.getElementById('player-menu-dropdown').classList.add('hidden');
+        }
+
+        function toggleLyricsView() {
+            if (showMetaMode) toggleMetaView();
+            showLyricsMode = !showLyricsMode;
+            const container = document.getElementById('lyrics-container');
+            const cover = document.getElementById('full-cover');
+            const btn = document.getElementById('btn-toggle-lyrics');
+            
+            if (showLyricsMode) {
+                container.classList.remove('hidden');
+                cover.classList.add('opacity-0');
+                btn.innerHTML = '<i class="fa-solid fa-compact-disc mr-1"></i> Copertina';
+                fetchLyricsForCurrentTrack();
+            } else {
+                container.classList.add('hidden');
+                cover.classList.remove('opacity-0');
+                btn.innerHTML = '<i class="fa-solid fa-align-left mr-1"></i> Testo';
+            }
+        }
+
+        function toggleMetaView() {
+            if (showLyricsMode) toggleLyricsView();
+            showMetaMode = !showMetaMode;
+            const container = document.getElementById('meta-container');
+            const cover = document.getElementById('full-cover');
+            const btn = document.getElementById('btn-toggle-meta');
+            
+            if (showMetaMode) {
+                container.classList.remove('hidden');
+                cover.classList.add('opacity-0');
+                btn.innerHTML = '<i class="fa-solid fa-compact-disc mr-1"></i> Copertina';
+                populateTrackMeta();
+            } else {
+                container.classList.add('hidden');
+                cover.classList.remove('opacity-0');
+                btn.innerHTML = '<i class="fa-solid fa-circle-info mr-1"></i> Metatag';
+            }
+        }
+
+        function populateTrackMeta() {
+            const track = currentPlaylist[currentIndex];
+            const metaEl = document.getElementById('meta-content');
+            if (!track) {
+                metaEl.innerHTML = '<p class="text-gray-400">Nessun brano in riproduzione.</p>';
+                return;
+            }
+            metaEl.innerHTML = `
+                <h4 class="font-bold text-amber-400 text-sm mb-2 border-b border-gray-800 pb-1">Metatag & Info</h4>
+                <div class="grid grid-cols-2 gap-2 text-left bg-gray-950/70 p-3 rounded-2xl border border-gray-800">
+                    <div><span class="text-gray-500 block text-[10px]">GENERE</span> <span class="font-semibold text-white truncate block">${track.genre}</span></div>
+                    <div><span class="text-gray-500 block text-[10px]">ANNO</span> <span class="font-semibold text-white">${track.year}</span></div>
+                    <div><span class="text-gray-500 block text-[10px]">ALBUM</span> <span class="font-semibold text-white truncate block">${track.album}</span></div>
+                    <div><span class="text-gray-500 block text-[10px]">FORMATO</span> <span class="font-semibold text-white">${track.format}</span></div>
+                    <div><span class="text-gray-500 block text-[10px]">BITRATE</span> <span class="font-semibold text-white">${track.bitRate}</span></div>
+                    <div><span class="text-gray-500 block text-[10px]">PESO FILE</span> <span class="font-semibold text-white">${track.size}</span></div>
+                </div>
+                <p class="text-[10px] text-gray-500 mt-2">Streaming API • spotiFUCK PWA ${APP_VERSION}</p>
+            `;
+        }
+
+        async function fetchLyricsForCurrentTrack() {
+            const track = currentPlaylist[currentIndex];
+            const lyricsEl = document.getElementById('lyrics-text');
+            lyricsEl.innerText = "Ricerca testo in corso...";
+
+            if (!track || !track.title) {
+                lyricsEl.innerText = "Nessun brano in riproduzione.";
+                return;
+            }
+
+            try {
+                const auth = getSubsonicAuthParams();
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 60000);
+                
+                const endpoint = `${serverConfig.url}/rest/getLyrics?${auth}&artist=${encodeURIComponent(track.artist)}&title=${encodeURIComponent(track.title)}`;
+                const response = await fetch(endpoint, { signal: controller.signal, credentials: 'omit' });
+                clearTimeout(timeoutId);
+
+                const data = await response.json();
+
+                if (data['subsonic-response'].status === 'ok' && data['subsonic-response'].lyrics) {
+                    lyricsEl.innerText = data['subsonic-response'].lyrics.value || "Testo non disponibile.";
+                } else {
+                    lyricsEl.innerText = "Nessun testo trovato sul server.";
+                }
+            } catch (err) {
+                lyricsEl.innerText = "Impossibile caricare il testo (Server offline o risposta lenta).";
+            }
+        }
+
+        // Parametri di autenticazione Subsonic con Player ID dedicato ed isolato
+        function getSubsonicAuthParams() {
+            const salt = Math.random().toString(36).substring(2, 10);
+            const token = CryptoJS.MD5(serverConfig.pass + salt).toString();
+            return `u=${encodeURIComponent(serverConfig.user)}&t=${token}&s=${salt}&v=1.16.1&c=spotiFUCK-PWA&playerId=spotifuck-pwa-player&f=json`;
+        }
+
+        async function sendPlayerUpdate(status = 'playing', trackId = '', time = 0) {
+            if (!serverConfig.user || !serverConfig.pass) return;
+            try {
+                const auth = getSubsonicAuthParams();
+                let params = `${auth}&playerId=spotifuck-pwa-player&playerName=${encodeURIComponent('spotiFUCK PWA Client')}`;
+                if (trackId) params += `&songId=${encodeURIComponent(trackId)}`;
+                if (time >= 0) params += `&time=${Math.floor(time)}`;
+                
+                const endpoint = `${serverConfig.url}/rest/updatePlayer?${params}`;
+                await fetch(endpoint, { credentials: 'omit', cache: 'no-store' });
+            } catch (err) {
+                console.error("Errore aggiornamento stato player server:", err);
+            }
+        }
+
+        // --- INVIO SCROBBLE OTTIMIZZATO E COMPATIBILE CON EDGE (V3.7.2) ---
+        async function sendScrobble(trackId, submission = false) {
+            if (!serverConfig.user || !serverConfig.pass || !trackId) return;
+            try {
+                const auth = getSubsonicAuthParams();
+                const endpoint = `${serverConfig.url}/rest/scrobble?${auth}&id=${trackId}&submission=${submission}`;
+                // Aggiunto cache: 'no-store' per superare le policy anti-tracking di Edge
+                await fetch(endpoint, { credentials: 'omit', cache: 'no-store' });
+            } catch (err) {
+                console.error("Errore invio scrobble:", err);
+            }
+        }
+
+        function saveSettings() {
+            serverConfig.user = document.getElementById('setting-user').value.trim();
+            serverConfig.pass = document.getElementById('setting-pass').value;
+
+            if (!serverConfig.user || !serverConfig.pass) {
+                alert("Inserisci sia il nome utente che la password.");
+                return;
+            }
+
+            localStorage.setItem('pwa_sub_user', serverConfig.user);
+            localStorage.setItem('pwa_sub_pass', serverConfig.pass);
+
+            cachedArtistsItems = null; 
+            closeSettings();
+            loadMusicFolders();
+        }
+
+        function logoutUser() {
+            localStorage.removeItem('pwa_sub_user');
+            localStorage.removeItem('pwa_sub_pass');
+            localStorage.removeItem('sub_user');
+            localStorage.removeItem('sub_pass');
+            serverConfig.user = '';
+            serverConfig.pass = '';
+            cachedArtistsItems = null;
+            
+            document.getElementById('setting-user').value = '';
+            document.getElementById('setting-pass').value = '';
+            document.getElementById('welcome-banner').style.display = 'flex';
+            document.getElementById('content-grid').innerHTML = '<div class="text-gray-500 text-xs text-center py-8">Inserisci le credenziali nelle impostazioni.</div>';
+            updateItemsCount(0);
+            
+            closeSettings();
+            openSettings();
+        }
+
+        function clearQueue() {
+            sendPlayerUpdate('stopped', '', 0);
+            audioElement.pause();
+            audioElement.src = "";
+            if (currentBlobUrl) {
+                URL.revokeObjectURL(currentBlobUrl);
+                currentBlobUrl = null;
+            }
+            blobCache.clear();
+            audioElement.load();
+            currentPlaylist = [];
+            originalPlaylist = [];
+            currentIndex = 0;
+            if (scrobbleTimer) clearTimeout(scrobbleTimer);
+            document.getElementById('mini-player').classList.add('hidden');
+            closeFullPlayer();
+        }
+
+        function updateBackButtonUI() {
+            const btnBack = document.getElementById('btn-back-folders');
+            if (navigationStack.length > 1) {
+                btnBack.classList.remove('hidden');
+            } else {
+                btnBack.classList.add('hidden');
+            }
+        }
+
+        function updateItemsCount(count) {
+            const badge = document.getElementById('items-count-badge');
+            if (badge) badge.innerText = count;
+        }
+
+        function updateSearchPlaceholder() {
+            const input = document.getElementById('search-input');
+            const state = navigationStack.length > 0 ? navigationStack[navigationStack.length - 1] : null;
+            
+            if (!state || state.isIndex || navigationStack.length <= 1) {
+                input.placeholder = "cerca artista...";
+                return;
+            }
+
+            if (state.level === 'song' || state.isStarred) {
+                input.placeholder = "cerca canzone...";
+            } else if (state.level === 'album') {
+                input.placeholder = "cerca album...";
+            } else if (state.level === 'intermediate') {
+                input.placeholder = "cerca sottocartelle e album...";
+            } else {
+                input.placeholder = "cerca...";
+            }
+        }
+
+        function goBackFolder() {
+            const currentState = navigationStack[navigationStack.length - 1];
+            const headerBtnIcon = document.getElementById('btn-header-starred')?.querySelector('i');
+
+            if (currentState && currentState.isStarred) {
+                navigationStack.pop();
+                if (headerBtnIcon) headerBtnIcon.className = 'fa-solid fa-star text-lg text-gray-400 hover:text-amber-400';
+                
+                currentFolderItems = currentState.previousItems || cachedArtistsItems || [];
+                const prevState = navigationStack[navigationStack.length - 1] || { name: "Libreria Musicale", level: 'artist' };
+                document.getElementById('section-title').innerText = prevState.name || "Libreria Musicale";
+                updateBackButtonUI();
+                updateSearchPlaceholder();
+                document.getElementById('search-input').value = '';
+                
+                const playAlbumBtn = document.getElementById('btn-play-album');
+                if (prevState.level === 'song') {
+                    playAlbumBtn.classList.remove('hidden');
+                } else {
+                    playAlbumBtn.classList.add('hidden');
+                }
+
+                renderFolderContent(currentFolderItems, prevState.level);
+                document.querySelector('main').scrollTop = 0;
+                return;
+            }
+
+            if (navigationStack.length > 1) {
+                navigationStack.pop(); 
+                const previousState = navigationStack[navigationStack.length - 1]; 
+                
+                document.getElementById('search-input').value = '';
+
+                if (previousState.isIndex) {
+                    navigationStack.pop();
+                    loadFolderIndexes(previousState.id, previousState.name);
+                } else if (previousState.items) {
+                    currentFolderItems = previousState.items;
+                    document.getElementById('section-title').innerText = previousState.name;
+                    updateBackButtonUI();
+                    updateSearchPlaceholder();
+                    
+                    const playAlbumBtn = document.getElementById('btn-play-album');
+                    if (previousState.level === 'song') {
+                        playAlbumBtn.classList.remove('hidden');
+                    } else {
+                        playAlbumBtn.classList.add('hidden');
+                    }
+
+                    renderFolderContent(previousState.items, previousState.level);
+                    document.querySelector('main').scrollTop = 0;
+                } else {
+                    executeLoadDirectory(previousState.id, previousState.name, false);
+                }
+                updateSearchPlaceholder();
+            } else {
+                loadMusicFolders();
+            }
+        }
+
+        function toggleStarredMode() {
+            const currentState = navigationStack[navigationStack.length - 1];
+            const headerBtnIcon = document.getElementById('btn-header-starred')?.querySelector('i');
+
+            if (currentState && currentState.isStarred) {
+                if (headerBtnIcon) headerBtnIcon.className = 'fa-solid fa-star text-lg text-gray-400 hover:text-amber-400';
+                goBackFolder(); 
+            } else {
+                if (headerBtnIcon) headerBtnIcon.className = 'fa-solid fa-star text-lg text-amber-400';
+                loadStarredView();
+            }
+        }
+
+        function renderServerError(message = "Server spotiFUCK irraggiungibile o risposta oltre i tempi limite (Timeout).") {
+            const grid = document.getElementById('content-grid');
+            grid.innerHTML = `
+                <div class="bg-red-950/40 border border-red-600/50 rounded-2xl p-4 text-center my-4 space-y-2">
+                    <i class="fa-solid fa-triangle-exclamation text-red-500 text-2xl"></i>
+                    <h4 class="font-bold text-sm text-red-400">Impossibile Connettersi al Server</h4>
+                    <p class="text-xs text-gray-300 leading-relaxed">${message}</p>
+                    <button onclick="loadMusicFolders()" class="mt-2 bg-red-600 hover:bg-red-500 text-white text-xs font-semibold px-4 py-2 rounded-xl transition shadow cursor-pointer">
+                        <i class="fa-solid fa-rotate mr-1"></i> Riprova Connessione
+                    </button>
+                </div>
+            `;
+            updateItemsCount(0);
+        }
+
+        async function loadMusicFolders() {
+            if (!serverConfig.user || !serverConfig.pass) {
+                hideSplashQuickly();
+                openSettings();
+                setTimeout(showInstallBanner, 1200);
+                return;
+            }
+
+            cachedArtistsItems = null; 
+            navigationStack = [];
+            document.getElementById('section-title').innerText = "Libreria Musicale";
+            document.getElementById('btn-back-folders').classList.add('hidden');
+            document.getElementById('btn-play-album').classList.add('hidden');
+            document.getElementById('search-input').value = '';
+            
+            const headerBtnIcon = document.getElementById('btn-header-starred')?.querySelector('i');
+            if (headerBtnIcon) headerBtnIcon.className = 'fa-solid fa-star text-lg text-gray-400 hover:text-amber-400';
+            
+            updateSearchPlaceholder();
+
+            const grid = document.getElementById('content-grid');
+            grid.innerHTML = '<div class="text-gray-500 text-xs text-center py-8"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Connessione in corso...</div>';
+
+            try {
+                const auth = getSubsonicAuthParams();
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 60000); 
+
+                const endpoint = `${serverConfig.url}/rest/getMusicFolders?${auth}`;
+                const response = await fetch(endpoint, { signal: controller.signal, credentials: 'omit', cache: 'no-store' });
+                clearTimeout(timeoutId);
+
+                const data = await response.json();
+
+                if (data['subsonic-response'].status === 'ok') {
+                    const folders = data['subsonic-response'].musicFolders?.musicFolder || [];
+                    document.getElementById('welcome-banner').style.display = 'none';
+                    await loadFolderIndexes(null, "Libreria Musicale", folders);
+                } else {
+                    document.getElementById('connection-status').innerText = "Errore autenticazione.";
+                    hideSplashQuickly();
+                    openSettings();
+                    setTimeout(showInstallBanner, 1200);
+                }
+            } catch (err) {
+                renderServerError();
+                hideSplashQuickly();
+                setTimeout(showInstallBanner, 1200);
+            }
+        }
+
+        async function loadFolderIndexes(folderId, folderName, musicFolders = []) {
+            navigationStack.push({ id: folderId, name: folderName, isIndex: true, level: 'artist' });
+            updateBackButtonUI();
+            updateSearchPlaceholder();
+            document.getElementById('section-title').innerText = "Libreria Musicale";
+            document.getElementById('btn-play-album').classList.add('hidden');
+
+            const grid = document.getElementById('content-grid');
+
+            if (!folderId && cachedArtistsItems && cachedArtistsItems.length > 0) {
+                currentFolderItems = cachedArtistsItems;
+                renderFolderContent(cachedArtistsItems, 'artist');
+                document.querySelector('main').scrollTop = 0;
+                hideSplashQuickly();
+                setTimeout(showInstallBanner, 1000);
+                return;
+            }
+
+            grid.innerHTML = '<div class="text-gray-500 text-xs text-center py-8"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Caricamento lista artisti...</div>';
+
+            try {
+                const auth = getSubsonicAuthParams();
+                let allItems = [];
+
+                let targetFolderIds = [];
+                if (folderId) {
+                    targetFolderIds.push(folderId);
+                } else if (musicFolders && musicFolders.length > 0) {
+                    targetFolderIds = musicFolders.map(f => f.id);
+                } else {
+                    targetFolderIds = [''];
+                }
+
+                for (let fId of targetFolderIds) {
+                    const musicFolderParam = fId ? `&musicFolderId=${fId}` : '';
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 60000); 
+
+                    const endpoint = `${serverConfig.url}/rest/getIndexes?${auth}${musicFolderParam}`;
+                    const response = await fetch(endpoint, { signal: controller.signal, credentials: 'omit', cache: 'no-store' });
+                    clearTimeout(timeoutId);
+
+                    const data = await response.json();
+
+                    if (data['subsonic-response']?.status === 'ok') {
+                        const indexData = data['subsonic-response'].indexes;
+                        if (!indexData) continue;
+
+                        if (indexData.child) {
+                            indexData.child.forEach(item => { item._itemType = 'artist'; allItems.push(item); });
+                        }
+                        if (indexData.index) {
+                            indexData.index.forEach(group => {
+                                if (group.artist) {
+                                    group.artist.forEach(art => { art._itemType = 'artist'; allItems.push(art); });
+                                }
+                            });
+                        }
+                    }
+                }
+
+                if (allItems.length === 0 && musicFolders.length > 0) {
+                    for (let f of musicFolders) {
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 60000); 
+                        const rootResp = await fetch(`${serverConfig.url}/rest/getMusicDirectory?${auth}&id=${f.id}`, { signal: controller.signal, credentials: 'omit', cache: 'no-store' });
+                        clearTimeout(timeoutId);
+                        
+                        const rootData = await rootResp.json();
+                        const children = rootData['subsonic-response']?.directory?.child || [];
+                        children.forEach(c => { c._itemType = 'artist'; allItems.push(c); });
+                    }
+                }
+
+                allItems = Array.from(new Map(allItems.map(item => [item.id, item])).values());
+                allItems.sort((a, b) => (a.name || a.title || "").localeCompare(b.name || b.title || ""));
+
+                if (!folderId) {
+                    cachedArtistsItems = allItems; 
+                }
+
+                currentFolderItems = allItems;
+                renderFolderContent(allItems, 'artist');
+                document.querySelector('main').scrollTop = 0;
+            } catch (err) {
+                renderServerError();
+            } finally {
+                hideSplashQuickly();
+                setTimeout(showInstallBanner, 1000);
+            }
+        }
+
+        function loadMusicDirectory(dirId, dirName) {
+            executeLoadDirectory(dirId, dirName, true);
+        }
+
+        async function executeLoadDirectory(dirId, dirName, pushToStack = true) {
+            try {
+                const auth = getSubsonicAuthParams();
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 60000); 
+
+                const endpoint = `${serverConfig.url}/rest/getMusicDirectory?${auth}&id=${dirId}`;
+                const response = await fetch(endpoint, { signal: controller.signal, credentials: 'omit', cache: 'no-store' });
+                clearTimeout(timeoutId);
+
+                const data = await response.json();
+
+                if (data['subsonic-response']?.status === 'ok') {
+                    const directory = data['subsonic-response'].directory;
+                    let children = directory.child || directory.artist || [];
+
+                    let hasSongs = children.some(c => c.streamId || c.duration || c.size || c.title);
+                    let hasSubDirs = children.some(c => c.isDir || (!c.streamId && !c.duration && !c.size && !c.title));
+
+                    let currentLevel = 'album';
+                    
+                    if (hasSongs && !hasSubDirs) {
+                        currentLevel = 'song';
+                    } else if (hasSubDirs) {
+                        let parentState = navigationStack[navigationStack.length - 1];
+                        if (parentState && parentState.level === 'artist') {
+                            let sampleSubDir = children.find(c => c.isDir || (!c.streamId && !c.duration && !c.size && !c.title));
+                            if (sampleSubDir) {
+                                currentLevel = 'intermediate';
+                            } else {
+                                currentLevel = 'album';
+                            }
+                        } else {
+                            currentLevel = 'intermediate';
+                        }
+                    }
+
+                    children.forEach(c => {
+                        const isDir = c.isDir || (!c.streamId && !c.duration && !c.size && !c.title);
+                        c._itemType = isDir ? 'album' : 'song';
+                    });
+
+                    if (currentLevel === 'song') {
+                        children.sort((a, b) => {
+                            let discA = parseInt(a.discNumber) || 1;
+                            let discB = parseInt(b.discNumber) || 1;
+                            if (discA !== discB) return discA - discB;
+                            
+                            let trackA = parseInt(a.track) || 9999;
+                            let trackB = parseInt(b.track) || 9999;
+                            if (trackA !== trackB) return trackA - trackB;
+                            
+                            return (a.title || "").localeCompare(b.title || "");
+                        });
+                    } else {
+                        children.sort((a, b) => (a.name || a.title || "").localeCompare(b.name || b.title || ""));
+                    }
+
+                    if (pushToStack) {
+                        navigationStack.push({ id: dirId, name: dirName, isIndex: false, level: currentLevel, items: children });
+                    }
+                    updateBackButtonUI();
+                    updateSearchPlaceholder();
+
+                    document.getElementById('section-title').innerText = dirName;
+                    document.getElementById('search-input').value = '';
+                    currentFolderItems = children;
+
+                    const playAlbumBtn = document.getElementById('btn-play-album');
+                    if (currentLevel === 'song' || (!hasSubDirs && hasSongs)) {
+                        playAlbumBtn.classList.remove('hidden');
+                    } else {
+                        playAlbumBtn.classList.add('hidden');
+                    }
+
+                    renderFolderContent(children, currentLevel);
+                    document.querySelector('main').scrollTop = 0;
+                }
+            } catch (err) {
+                renderServerError();
+            }
+        }
+
+        async function loadStarredView() {
+            navigationStack.push({ isStarred: true, name: "Preferiti", level: 'starred', previousItems: [...currentFolderItems] });
+            updateBackButtonUI();
+            updateSearchPlaceholder();
+            document.getElementById('section-title').innerText = "Preferiti";
+            document.getElementById('btn-play-album').classList.add('hidden');
+            document.getElementById('search-input').value = '';
+
+            const headerBtnIcon = document.getElementById('btn-header-starred')?.querySelector('i');
+            if (headerBtnIcon) headerBtnIcon.className = 'fa-solid fa-star text-lg text-amber-400';
+
+            const grid = document.getElementById('content-grid');
+            grid.innerHTML = '<div class="text-gray-500 text-xs text-center py-8"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Caricamento preferiti...</div>';
+
+            try {
+                const auth = getSubsonicAuthParams();
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 60000); 
+
+                const endpoint = `${serverConfig.url}/rest/getStarred2?${auth}`;
+                const response = await fetch(endpoint, { signal: controller.signal, credentials: 'omit', cache: 'no-store' });
+                clearTimeout(timeoutId);
+
+                const data = await response.json();
+
+                if (data['subsonic-response']?.status === 'ok') {
+                    const starred = data['subsonic-response'].starred2 || {};
+                    const songs = starred.song || [];
+
+                    let allStarredItems = songs.map(s => ({ ...s, type: 'song', _itemType: 'song', title: s.title, starred: true }));
+
+                    currentFolderItems = allStarredItems;
+                    renderFolderContent(allStarredItems, 'starred');
+                    document.querySelector('main').scrollTop = 0;
+                }
+            } catch (err) {
+                renderServerError();
+            }
+        }
+
+        async function toggleItemStar(targetItem, event) {
+            if (event) event.stopPropagation();
+            if (!targetItem || !targetItem.id) return;
+
+            targetItem.starred = !targetItem.starred;
+
+            const searchInput = document.getElementById('search-input');
+            const query = searchInput ? searchInput.value : '';
+            if (query.trim()) {
+                handleSearch(query);
+            } else {
+                const currentState = navigationStack[navigationStack.length - 1];
+                const currentLevel = currentState ? currentState.level : 'artist';
+                renderFolderContent(currentFolderItems, currentLevel);
+            }
+
+            try {
+                const auth = getSubsonicAuthParams();
+                const action = targetItem.starred ? 'star' : 'unstar';
+                const endpoint = `${serverConfig.url}/rest/${action}?${auth}&id=${encodeURIComponent(targetItem.id)}`;
+                const response = await fetch(endpoint, { credentials: 'omit', cache: 'no-store' });
+                const data = await response.json();
+
+                if (data['subsonic-response']?.status !== 'ok') {
+                    targetItem.starred = !targetItem.starred;
+                    if (query.trim()) {
+                        handleSearch(query);
+                    } else {
+                        const currentState = navigationStack[navigationStack.length - 1];
+                        const currentLevel = currentState ? currentState.level : 'artist';
+                        renderFolderContent(currentFolderItems, currentLevel);
+                    }
+                } else {
+                    const currentState = navigationStack[navigationStack.length - 1];
+                    const currentLevel = currentState ? currentState.level : 'artist';
+                    if (currentLevel === 'starred' && !targetItem.starred) {
+                        loadStarredView();
+                    }
+                }
+            } catch (err) {
+                targetItem.starred = !targetItem.starred;
+                if (query.trim()) {
+                    handleSearch(query);
+                } else {
+                    const currentState = navigationStack[navigationStack.length - 1];
+                    const currentLevel = currentState ? currentState.level : 'artist';
+                    renderFolderContent(currentFolderItems, currentLevel);
+                }
+                console.error("Errore aggiornamento preferito brano:", err);
+            }
+        }
+
+        function renderFolderContent(items, level) {
+            const grid = document.getElementById('content-grid');
+            if (!items || items.length === 0) {
+                grid.innerHTML = '<div class="text-gray-500 text-xs text-center py-8">Nessun elemento trovato.</div>';
+                updateItemsCount(0);
+                return;
+            }
+
+            let html = '';
+            items.forEach((item, index) => {
+                const itemName = item.name || item.title || item.album || "Elemento senza nome";
+                const itemArtist = item.artist || item.subtitle || "";
+                const auth = getSubsonicAuthParams();
+                
+                const isCurrentlyPlaying = currentPlaylist[currentIndex] && currentPlaylist[currentIndex].id === item.id;
+                const isItemDirectory = item.isDir || item.type === 'artist' || item.type === 'album' || (!item.streamId && !item.duration && !item.size && !item.title);
+
+                if (!item._itemType) {
+                    if (level === 'artist' || item.type === 'artist') item._itemType = 'artist';
+                    else if (isItemDirectory) item._itemType = 'album';
+                    else item._itemType = 'song';
+                }
+
+                let coverHtml = '';
+                if (item.coverArt) {
+                    const coverUrl = `${serverConfig.url}/rest/getCoverArt?${auth}&id=${item.coverArt}&size=100`;
+                    const fallbackClass = item._itemType === 'artist' ? 'bg-red-950/50 border-red-500/30 text-red-400' : 'bg-amber-950/60 border-amber-500/30 text-amber-400';
+                    const fallbackIcon = item._itemType === 'artist' ? 'fa-microphone' : 'fa-folder-open';
+                    coverHtml = `<img src="${coverUrl}" class="w-9 h-9 rounded-lg object-cover bg-gray-900 shrink-0 border border-amber-500/20" onerror="this.outerHTML='<div class=\\'w-9 h-9 rounded-lg ${fallbackClass} border flex items-center justify-center shrink-0\\'><i class=\\'fa-solid ${fallbackIcon} text-xs\\'></i></div>'">`;
+                } else if (item._itemType === 'artist') {
+                    coverHtml = `<div class="w-9 h-9 rounded-lg bg-red-950/50 border border-red-500/30 flex items-center justify-center text-red-400 shrink-0"><i class="fa-solid fa-microphone text-xs"></i></div>`;
+                } else {
+                    coverHtml = `<div class="w-9 h-9 rounded-lg bg-amber-950/60 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0"><i class="fa-solid fa-folder-open text-xs"></i></div>`;
+                }
+                
+                const isSongItem = !isItemDirectory && (item.streamId || item.duration || item.size || item.title || item._itemType === 'song');
+                const cardBgClass = isCurrentlyPlaying ? 'playing-card' : 'bg-[#121216] hover:bg-gray-800/80';
+
+                if (level === 'starred') {
+                    html += `
+                        <div data-song-id="${item.id}" onclick='playSingleTrack(currentFolderItems[${index}], currentFolderItems)' class="${cardBgClass} border border-gray-800 rounded-xl p-2.5 cursor-pointer transition-all duration-200 flex items-center justify-between shadow">
+                            <div class="flex items-center space-x-3 truncate">
+                                ${coverHtml}
+                                <div class="truncate">
+                                    <h4 class="font-bold text-xs ${isCurrentlyPlaying ? 'text-red-400 font-extrabold' : 'text-white'} truncate">${itemName}</h4>
+                                    <p class="text-[10px] text-gray-400 truncate">${itemArtist}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <button onclick='toggleItemStar(currentFolderItems[${index}], event)' class="text-amber-400 hover:text-amber-300 p-2 cursor-pointer" title="Preferito">
+                                    <i class="fa-solid fa-star text-xs"></i>
+                                </button>
+                                <i class="fa-solid ${isCurrentlyPlaying ? 'fa-volume-high text-red-400 animate-pulse' : 'fa-play text-red-500'} text-xs px-2"></i>
+                            </div>
+                        </div>
+                    `;
+                } else if (isItemDirectory) {
+                    html += `
+                        <div data-song-id="${item.id}" onclick="loadMusicDirectory('${item.id}', '${itemName.replace(/'/g, "\\'")}')" class="${cardBgClass} border border-gray-800 rounded-xl p-2.5 cursor-pointer transition-all duration-200 flex items-center justify-between shadow">
+                            <div class="flex items-center space-x-3 truncate">
+                                ${coverHtml}
+                                <span class="font-bold text-xs text-white truncate">${itemName}</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <i class="fa-solid fa-chevron-right text-xs text-gray-500 px-2"></i>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div data-song-id="${item.id}" onclick='playSingleTrack(currentFolderItems[${index}], currentFolderItems)' class="${cardBgClass} border border-gray-800 rounded-xl p-2.5 cursor-pointer transition-all duration-200 flex items-center justify-between shadow">
+                            <div class="flex items-center space-x-3 truncate">
+                                <div class="w-9 h-9 rounded-lg ${isCurrentlyPlaying ? 'bg-red-600 text-white animate-pulse' : 'bg-red-600/20 text-red-400'} flex items-center justify-center shrink-0">
+                                    <i class="fa-solid ${isCurrentlyPlaying ? 'fa-volume-high' : 'fa-music'} text-xs"></i>
+                                </div>
+                                <div class="truncate">
+                                    <h4 class="font-bold text-xs ${isCurrentlyPlaying ? 'text-red-400 font-extrabold' : 'text-white'} truncate">${itemName}</h4>
+                                    <p class="text-[10px] text-gray-400 truncate">${itemArtist}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                ${isSongItem ? `<button onclick='toggleItemStar(currentFolderItems[${index}], event)' class="text-amber-400 hover:text-amber-300 p-2 cursor-pointer" title="Preferito"><i class="${item.starred ? 'fa-solid fa-star text-amber-400' : 'fa-regular fa-star text-gray-400'} text-xs"></i></button>` : ''}
+                                <i class="fa-solid ${isCurrentlyPlaying ? 'fa-pause' : 'fa-play'} text-xs text-red-500 px-2"></i>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            grid.innerHTML = html;
+            updateItemsCount(items.length);
+        }
+
+        function playCurrentAlbum() {
+            if (!currentFolderItems || currentFolderItems.length === 0) return;
+            const songList = currentFolderItems.filter(i => !i.isDir && (i.streamId || i.duration || i.size || i.title));
+            if (songList.length > 0) {
+                playSingleTrack(songList[0], songList);
+            }
+        }
+
+        function handleSearch(query) {
+            const q = query.toLowerCase().trim();
+            const currentState = navigationStack[navigationStack.length - 1];
+            const currentLevel = currentState ? currentState.level : 'artist';
+
+            if (!q) {
+                renderFolderContent(currentFolderItems, currentLevel);
+                return;
+            }
+
+            const filteredItems = currentFolderItems.filter(item => {
+                const name = (item.name || item.title || item.album || "").toLowerCase();
+                const artist = (item.artist || "").toLowerCase();
+                return name.includes(q) || artist.includes(q);
+            });
+
+            renderFolderContent(filteredItems, currentLevel);
+        }
+
+        function mapSongToTrack(s, auth) {
+            return {
+                id: s.id,
+                title: s.title || "Brano sconosciuto",
+                artist: s.artist || "",
+                album: s.album || "",
+                genre: s.genre || "N/D",
+                year: s.year || "N/D",
+                bitRate: s.bitRate ? `${s.bitRate} kbps` : "128 - 320 kbps (VBR/CBR)",
+                format: s.suffix ? s.suffix.toUpperCase() : "MP3",
+                size: s.size ? `${(s.size / (1024*1024)).toFixed(1)} MB` : "N/D",
+                track: parseInt(s.track) || 9999,
+                discNumber: parseInt(s.discNumber) || 1,
+                starred: s.starred ? true : false,
+                coverArt: s.coverArt ? `${serverConfig.url}/rest/getCoverArt?${auth}&id=${s.coverArt}&size=300` : '',
+                url: `${serverConfig.url}/rest/stream?${auth}&id=${s.id}`
+            };
+        }
+
+        function playSingleTrack(song, allItems = []) {
+            const auth = getSubsonicAuthParams();
+            let trackList = allItems.filter(i => !i.isDir && (i.streamId || i.duration || i.size || i.title));
+            
+            trackList.sort((a, b) => {
+                let discA = parseInt(a.discNumber) || 1;
+                let discB = parseInt(b.discNumber) || 1;
+                if (discA !== discB) return discA - discB;
+                
+                let trackA = parseInt(a.track) || 9999;
+                let trackB = parseInt(b.track) || 9999;
+                if (trackA !== trackB) return trackA - trackB;
+                
+                return (a.title || "").localeCompare(b.title || "");
+            });
+
+            if (trackList.length > 0) {
+                originalPlaylist = trackList.map(s => mapSongToTrack(s, auth));
+            } else {
+                originalPlaylist = [mapSongToTrack(song, auth)];
+            }
+
+            currentPlaylist = [...originalPlaylist];
+            if (isShuffleActive) applyShuffle();
+
+            let targetIndex = currentPlaylist.findIndex(t => t.id === song.id);
+            playTrack(targetIndex !== -1 ? targetIndex : 0);
+        }
+
+        // Riproduzione unificata con Blob in RAM, prefetch universale e logica scrobble compatibile Edge
+        async function playTrack(index) {
+            if (index < 0 || index >= currentPlaylist.length) return;
+            currentIndex = index;
+            const track = currentPlaylist[currentIndex];
+
+            document.querySelectorAll('[data-song-id]').forEach(el => {
+                el.classList.remove('playing-card');
+                const iconContainer = el.querySelector('.w-9');
+                const icon = el.querySelector('.w-9 i');
+                const title = el.querySelector('h4');
+
+                if (iconContainer) iconContainer.className = 'w-9 h-9 rounded-lg bg-red-600/20 text-red-400 flex items-center justify-center shrink-0';
+                if (icon) icon.className = 'fa-solid fa-music text-xs';
+                if (title) title.className = 'font-bold text-xs text-white truncate';
+            });
+
+            const activeEl = document.querySelector(`[data-song-id="${track.id}"]`);
+            if (activeEl) {
+                activeEl.classList.add('playing-card');
+                const iconContainer = activeEl.querySelector('.w-9');
+                const icon = activeEl.querySelector('.w-9 i');
+                const title = activeEl.querySelector('h4');
+
+                if (iconContainer) iconContainer.className = 'w-9 h-9 rounded-lg bg-red-600 text-white flex items-center justify-center shrink-0 animate-pulse';
+                if (icon) icon.className = 'fa-solid fa-volume-high text-xs';
+                if (title) title.className = 'font-bold text-xs text-red-400 font-extrabold truncate';
+            }
+
+            // UI feedback immediato
+            document.getElementById('mini-player').classList.remove('hidden');
+            document.getElementById('mini-title').innerText = track.title;
+            document.getElementById('mini-artist').innerText = track.artist;
+            document.getElementById('mini-cover').src = track.coverArt || 'pwa/spotifuck_bckgnd_w.png';
+
+            document.getElementById('full-title').innerText = track.title;
+            document.getElementById('full-artist').innerText = track.artist;
+            document.getElementById('full-album-name').innerText = track.album || '';
+            document.getElementById('full-cover').src = track.coverArt || 'pwa/spotifuck_bckgnd_w.png';
+
+            updateStarButtonUI(track.starred);
+            updatePlayButtons(false, true);
+
+            try {
+                let blob;
+                if (blobCache.has(track.id)) {
+                    blob = blobCache.get(track.id);
+                    blobCache.delete(track.id);
+                } else {
+                    blob = await fetchTypedAudioBlob(track);
+                }
+
+                if (currentPlaylist[currentIndex]?.id !== track.id) return;
+
+                if (currentBlobUrl) {
+                    URL.revokeObjectURL(currentBlobUrl);
+                }
+                currentBlobUrl = URL.createObjectURL(blob);
+                audioElement.src = currentBlobUrl;
+                audioElement.load();
+                await audioElement.play();
+            } catch (err) {
+                console.warn("Buffer blob fallito, fallback su streaming diretto:", err);
+                if (currentPlaylist[currentIndex]?.id !== track.id) return;
+                audioElement.src = track.url;
+                audioElement.load();
+                try {
+                    await audioElement.play();
+                } catch (playErr) {
+                    console.error("Errore avvio riproduzione:", playErr);
+                    updatePlayButtons(false, false);
+                }
+            }
+
+            // Prefetch in background della traccia successiva
+            prefetchNextTrack();
+
+            sendPlayerUpdate('playing', track.id, 0);
+
+            // --- GESTIONE SCROBBLE AFFIDABILE (V3.7.2) ---
+            if (scrobbleTimer) clearTimeout(scrobbleTimer);
+            sendScrobble(track.id, false); // Notifica "now playing" immediata
+
+            const currentTrackId = track.id;
+            const setupScrobbleTimer = () => {
+                const duration = audioElement.duration;
+                let scrobbleDelay = 30000;
+                if (!isNaN(duration) && duration > 0) {
+                    scrobbleDelay = Math.min(30000, (duration * 1000) / 2);
+                    if (scrobbleDelay < 5000) scrobbleDelay = 5000;
+                }
+
+                scrobbleTimer = setTimeout(() => {
+                    if (currentPlaylist[currentIndex]?.id === currentTrackId) {
+                        sendScrobble(currentTrackId, true); // Scrobble ufficiale registrato
+                    }
+                }, scrobbleDelay);
+            };
+
+            if (!isNaN(audioElement.duration) && audioElement.duration > 0) {
+                setupScrobbleTimer();
+            } else {
+                audioElement.onloadedmetadata = setupScrobbleTimer;
+            }
+            // ----------------------------------------------
+
+            if (showLyricsMode) fetchLyricsForCurrentTrack();
+            if (showMetaMode) populateTrackMeta();
+
+            updatePlayButtons(!audioElement.paused, false);
+            setupMediaSession(track);
+        }
+
+        async function toggleCurrentTrackStar() {
+            const track = currentPlaylist[currentIndex];
+            if (!track) return;
+
+            try {
+                const auth = getSubsonicAuthParams();
+                const action = track.starred ? 'unstar' : 'star';
+                const endpoint = `${serverConfig.url}/rest/${action}?${auth}&id=${track.id}`;
+                
+                const response = await fetch(endpoint, { credentials: 'omit', cache: 'no-store' });
+                const data = await response.json();
+
+                if (data['subsonic-response']?.status === 'ok') {
+                    track.starred = !track.starred;
+                    updateStarButtonUI(track.starred);
+                }
+            } catch (err) {
+                console.error("Errore aggiornamento preferito:", err);
+            }
+        }
+
+        function updateStarButtonUI(isStarred) {
+            const btn = document.getElementById('full-btn-star');
+            if (isStarred) {
+                btn.innerHTML = '<i class="fa-solid fa-star text-amber-400"></i>';
+            } else {
+                btn.innerHTML = '<i class="fa-regular fa-star text-gray-400 hover:text-amber-400"></i>';
+            }
+        }
+
+        function togglePlay() {
+            if (currentPlaylist.length === 0) return;
+            if (audioElement.paused) {
+                audioElement.play();
+                const track = currentPlaylist[currentIndex];
+                if (track) sendPlayerUpdate('playing', track.id, audioElement.currentTime);
+                updatePlayButtons(true);
+            } else {
+                audioElement.pause();
+                sendPlayerUpdate('paused', '', audioElement.currentTime);
+                updatePlayButtons(false);
+            }
+        }
+
+        function updatePlayButtons(isPlaying, isLoading = false) {
+            const miniBtnIcon = document.getElementById('mini-btn-play').querySelector('i');
+            const fullBtnIcon = document.getElementById('full-btn-play').querySelector('i');
+
+            if (isLoading) {
+                miniBtnIcon.className = "fa-solid fa-spinner fa-spin text-sm";
+                fullBtnIcon.className = "fa-solid fa-spinner fa-spin text-xl sm:text-2xl";
+            } else if (isPlaying) {
+                miniBtnIcon.className = "fa-solid fa-pause text-sm";
+                fullBtnIcon.className = "fa-solid fa-pause text-2xl";
+            } else {
+                miniBtnIcon.className = "fa-solid fa-play text-sm ml-0.5";
+                fullBtnIcon.className = "fa-solid fa-play text-2xl ml-1";
+            }
+        }
+
+        audioElement.addEventListener('waiting', () => updatePlayButtons(false, true));
+        audioElement.addEventListener('stalled', () => updatePlayButtons(false, true));
+        audioElement.addEventListener('playing', () => updatePlayButtons(true, false));
+        audioElement.addEventListener('play', () => updatePlayButtons(true, false));
+        audioElement.addEventListener('pause', () => updatePlayButtons(false, false));
+
+        function nextTrack() {
+            if (currentPlaylist.length === 0) return;
+            if (currentIndex + 1 < currentPlaylist.length) {
+                playTrack(currentIndex + 1);
+            } else if (repeatMode === 1) {
+                playTrack(0);
+            }
+        }
+
+        function prevTrack() {
+            if (currentPlaylist.length === 0) return;
+            if (currentIndex - 1 >= 0) {
+                playTrack(currentIndex - 1);
+            }
+        }
+
+        function toggleShuffle() {
+            isShuffleActive = !isShuffleActive;
+            const btn = document.getElementById('btn-shuffle');
+            
+            if (isShuffleActive) {
+                btn.className = "text-red-500 text-lg transition cursor-pointer";
+                applyShuffle();
+            } else {
+                btn.className = "text-gray-400 hover:text-white text-lg transition cursor-pointer";
+                const currentTrack = currentPlaylist[currentIndex];
+                currentPlaylist = [...originalPlaylist];
+                if (currentTrack) {
+                    let idx = currentPlaylist.findIndex(t => t.id === currentTrack.id);
+                    if (idx !== -1) currentIndex = idx;
+                }
+            }
+        }
+
+        function applyShuffle() {
+            if (currentPlaylist.length <= 1) return;
+            const currentTrack = currentPlaylist[currentIndex];
+            let otherTracks = currentPlaylist.filter((_, idx) => idx !== currentIndex);
+            for (let i = otherTracks.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [otherTracks[i], otherTracks[j]] = [otherTracks[j], otherTracks[i]];
+            }
+            currentPlaylist = [currentTrack, ...otherTracks];
+            currentIndex = 0;
+        }
+
+        function toggleRepeat() {
+            repeatMode = (repeatMode + 1) % 3;
+            const btn = document.getElementById('btn-repeat');
+            
+            if (repeatMode === 0) {
+                btn.className = "text-gray-400 hover:text-white text-lg transition cursor-pointer";
+                btn.innerHTML = '<i class="fa-solid fa-repeat"></i>';
+                btn.title = "Ripeti: Disattivo";
+            } else if (repeatMode === 1) {
+                btn.className = "text-red-500 text-lg transition cursor-pointer";
+                btn.innerHTML = '<i class="fa-solid fa-repeat"></i>';
+                btn.title = "Ripeti: Tutti";
+            } else if (repeatMode === 2) {
+                btn.className = "text-red-500 text-lg transition cursor-pointer relative";
+                btn.innerHTML = '<i class="fa-solid fa-repeat"></i><span class="absolute -top-1 -right-2 text-[10px] font-bold bg-red-600 text-white rounded-full px-1">1</span>';
+                btn.title = "Ripeti: Brano Corrente";
+            }
+        }
+
+        audioElement.addEventListener('timeupdate', () => {
+            if (!isNaN(audioElement.duration)) {
+                const progress = (audioElement.currentTime / audioElement.duration) * 100;
+                document.getElementById('progress-bar').value = progress;
+                document.getElementById('current-time').innerText = formatTime(audioElement.currentTime);
+                document.getElementById('total-duration').innerText = formatTime(audioElement.duration);
+            }
+        });
+
+        audioElement.addEventListener('ended', () => {
+            if (repeatMode === 2) {
+                playTrack(currentIndex);
+            } else if (currentIndex + 1 < currentPlaylist.length) {
+                nextTrack();
+            } else if (repeatMode === 1) {
+                playTrack(0);
+            }
+        });
+
+        document.getElementById('progress-bar').addEventListener('input', (e) => {
+            if (!isNaN(audioElement.duration)) {
+                const time = (e.target.value / 100) * audioElement.duration;
+                audioElement.currentTime = time;
+            }
+        });
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        function setupMediaSession(track) {
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: track.title,
+                    artist: track.artist,
+                    album: track.album,
+                    artwork: [{ src: track.coverArt, sizes: '512x512', type: 'image/png' }]
+                });
+
+                navigator.mediaSession.setActionHandler('play', () => { audioElement.play(); updatePlayButtons(true); });
+                navigator.mediaSession.setActionHandler('pause', () => { audioElement.pause(); updatePlayButtons(false); });
+                navigator.mediaSession.setActionHandler('previoustrack', prevTrack);
+                navigator.mediaSession.setActionHandler('nexttrack', nextTrack);
+            }
+        }
+    </script>
+</body>
+</html>
