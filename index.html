@@ -124,10 +124,10 @@
                 <div class="flex items-center justify-between border-b border-gray-800 pb-1.5">
                     <span class="text-xs font-bold text-amber-400 uppercase tracking-wider">About</span>
                     <button onclick="closeLogoTooltip()" class="text-gray-400 hover:text-white p-1 text-xs cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+                    <p>• <strong>Codice Sorgente:</strong> <a href="https://github.com/erickbaldi/spotifuck-pwa" target="_blank" rel="noopener noreferrer" class="text-amber-400 underline hover:text-amber-300"><i class="fa-brands fa-github"></i> GitHub Repository</a></p>
                 </div>
                 <p class="text-xs italic font-serif text-amber-300 text-center tracking-wide py-0.5">“no fees, no advertising, no interruptions”</p>
                 <div class="text-[10px] text-gray-400 space-y-1 py-1 border-y border-gray-800">
-                    <p>• <strong>Codice Sorgente:</strong> <a href="https://github.com/erickbaldi/spotifuck-pwa" target="_blank" rel="noopener noreferrer" class="text-amber-400 underline hover:text-amber-300"><i class="fa-brands fa-github"></i> GitHub Repository</a></p>
                     <p>• <strong>Formato libreria audio:</strong> MP3 (VBR / CBR 128 &tilde; 320 kbps)</p>
                     <p>• <strong>Protocollo Server:</strong> Java 8 Jetty API v1.16.1</p>
                     <p>• <strong>Architettura App:</strong> Progressive Web App (PWA) client-side</p>
@@ -183,7 +183,7 @@
             <!-- Titolo Sezione Dinamico, Contatore e Pulsanti Azione -->
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2 overflow-hidden pr-2">
-                    <h3 id="section-title" class="font-bold text-sm text-amber-400 uppercase tracking-wider truncate">Libreria Musicale</h3>
+                    <h3 id="section-title" class="font-bold text-sm text-amber-400 uppercase tracking-wider truncate">Artisti</h3>
                     <span id="items-count-badge" class="text-[10px] bg-red-950/80 border border-red-500/40 text-red-300 px-2 py-0.5 rounded-full font-mono shrink-0">0</span>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
@@ -797,8 +797,8 @@
                 if (headerBtnIcon) headerBtnIcon.className = 'fa-solid fa-star text-lg text-gray-400 hover:text-amber-400';
                 
                 currentFolderItems = currentState.previousItems || cachedArtistsItems || [];
-                const prevState = navigationStack[navigationStack.length - 1] || { name: "Libreria Musicale", level: 'artist' };
-                document.getElementById('section-title').innerText = prevState.name || "Libreria Musicale";
+                const prevState = navigationStack[navigationStack.length - 1] || { name: "Artisti", level: 'artist' };
+                document.getElementById('section-title').innerText = prevState.name || "Artisti";
                 updateBackButtonUI();
                 updateSearchPlaceholder();
                 document.getElementById('search-input').value = '';
@@ -886,7 +886,7 @@
 
             cachedArtistsItems = null; 
             navigationStack = [];
-            document.getElementById('section-title').innerText = "Libreria Musicale";
+            document.getElementById('section-title').innerText = "Artisti";
             document.getElementById('btn-back-folders').classList.add('hidden');
             document.getElementById('btn-play-album').classList.add('hidden');
             document.getElementById('search-input').value = '';
@@ -913,7 +913,7 @@
                 if (data['subsonic-response'].status === 'ok') {
                     const folders = data['subsonic-response'].musicFolders?.musicFolder || [];
                     document.getElementById('welcome-banner').style.display = 'none';
-                    await loadFolderIndexes(null, "Libreria Musicale", folders);
+                    await loadFolderIndexes(null, "Artisti", folders);
                 } else {
                     document.getElementById('connection-status').innerText = "Errore autenticazione.";
                     hideSplashQuickly();
@@ -931,7 +931,7 @@
             navigationStack.push({ id: folderId, name: folderName, isIndex: true, level: 'artist' });
             updateBackButtonUI();
             updateSearchPlaceholder();
-            document.getElementById('section-title').innerText = "Libreria Musicale";
+            document.getElementById('section-title').innerText = "Artisti";
             document.getElementById('btn-play-album').classList.add('hidden');
 
             const grid = document.getElementById('content-grid');
