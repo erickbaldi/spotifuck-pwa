@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Backup locali e file temporanei
+backup/
+*.bak
+*.tmp
+*~
+.DS_Store
+Thumbs.db
