@@ -4,7 +4,7 @@
 ### Changed
 - Rinominata l'etichetta principale e la navigazione radice da `Libreria Musicale` ad **`ARTISTI`**.
 - Aggiunto il link al repository GitHub (`https://github.com/erickbaldi/spotifuck-pwa`) come ultima voce dell'elenco informazioni nel box *About*.
-- Ripristinata e pulita la struttura di `index.html` sulla base `v3.7.2` mantenendo la PWA leggera.
+- Ripristinata e allineata la struttura di `index.html` sulla base `v3.7.2` mantenendo la PWA leggera.
 
 ## [v3.7.2]
 ### Fixed
