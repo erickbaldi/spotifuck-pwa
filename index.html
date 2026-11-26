@@ -62,6 +62,7 @@
             display: none !important;
         }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
 </head>
 <body class="flex flex-col h-screen overflow-hidden select-none">
 
@@ -250,6 +251,37 @@
             </div>
 
             <div id="connection-status" class="text-xs text-center text-gray-400"></div>
+        
+            <!-- Box Condivisione App tramite QR -->
+            <div class="bg-[#121216] border border-gray-800 rounded-2xl p-4 space-y-3 shadow-xl">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-sm font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-qrcode"></i> Condividi App
+                    </h3>
+                    <span class="text-[10px] font-mono text-gray-500">PWA</span>
+                </div>
+                <p class="text-xs text-gray-400">
+                    Fai inquadrare il QR code per aprire <span class="text-amber-300 font-mono">https://erick.ns0.it/pwa</span> su un altro dispositivo.
+                </p>
+                <div class="flex flex-col sm:flex-row items-center gap-4 pt-1">
+                    <div class="bg-white p-2.5 rounded-xl shrink-0 flex items-center justify-center min-w-[136px] min-h-[136px]" id="pwa-qr-container" aria-label="QR Code per https://erick.ns0.it/pwa"></div>
+                    <div class="flex-1 w-full space-y-2.5">
+                        <div class="bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs font-mono text-gray-300 break-all select-all">
+                            https://erick.ns0.it/pwa
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <button type="button" onclick="copyPwaShareUrl()" id="btn-copy-pwa-url" class="flex-1 bg-gray-800 hover:bg-gray-700 text-white text-xs font-semibold py-2 px-3 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer">
+                                <i class="fa-regular fa-copy"></i> <span>Copia link</span>
+                            </button>
+                            <button type="button" onclick="sharePwaUrl()" id="btn-native-share-pwa" class="flex-1 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-amber-300 text-xs font-semibold py-2 px-3 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer">
+                                <i class="fa-solid fa-share-nodes"></i> <span>Condividi</span>
+                            </button>
+                        </div>
+                        <p id="pwa-share-feedback" class="text-[11px] text-emerald-400 hidden"></p>
+                    </div>
+                </div>
+            </div>
+
         </section>
 
     </main>
@@ -540,14 +572,147 @@
             if (splash) splash.classList.add('fade-out');
         }
 
+        
+        const PWA_SHARE_URL = "https://erick.ns0.it/pwa";
+        let pwaHistoryDepth = 0;
+        let suppressNextPopstate = false;
+
+        function renderPwaShareQr() {
+            const container = document.getElementById('pwa-qr-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            if (typeof QRCode !== 'undefined') {
+                new QRCode(container, {
+                    text: PWA_SHARE_URL,
+                    width: 116,
+                    height: 116,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.M
+                });
+            } else {
+                const img = document.createElement('img');
+                img.src = `https://api.qrserver.com/v1/create-qr-code/?size=116x116&data=${encodeURIComponent(PWA_SHARE_URL)}`;
+                img.alt = "QR Code https://erick.ns0.it/pwa";
+                img.width = 116;
+                img.height = 116;
+                img.className = "rounded";
+                img.onerror = () => {
+                    container.innerHTML = `<span class="text-[10px] text-gray-800 font-mono text-center px-1">${PWA_SHARE_URL}</span>`;
+                };
+                container.appendChild(img);
+            }
+        }
+
+        async function copyPwaShareUrl() {
+            const feedback = document.getElementById('pwa-share-feedback');
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(PWA_SHARE_URL);
+                } else {
+                    const tmp = document.createElement('input');
+                    tmp.value = PWA_SHARE_URL;
+                    document.body.appendChild(tmp);
+                    tmp.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(tmp);
+                }
+                if (feedback) {
+                    feedback.textContent = "Link copiato negli appunti!";
+                    feedback.classList.remove('hidden');
+                    setTimeout(() => feedback.classList.add('hidden'), 2500);
+                }
+            } catch (e) {
+                if (feedback) {
+                    feedback.textContent = "Seleziona e copia il link manualmente.";
+                    feedback.classList.remove('hidden');
+                    setTimeout(() => feedback.classList.add('hidden'), 2500);
+                }
+            }
+        }
+
+        async function sharePwaUrl() {
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: "spotiFUCK PWA",
+                        text: "Apri spotiFUCK PWA:",
+                        url: PWA_SHARE_URL
+                    });
+                    return;
+                } catch (e) {
+                    if (e && e.name === 'AbortError') return;
+                }
+            }
+            copyPwaShareUrl();
+        }
+
+        function pushAppHistoryStep(tag) {
+            try {
+                pwaHistoryDepth += 1;
+                history.pushState({ spotifuckStep: tag, depth: pwaHistoryDepth }, '', window.location.href);
+            } catch (e) {}
+        }
+
+        function popAppHistoryStepSilently() {
+            if (pwaHistoryDepth > 0) {
+                pwaHistoryDepth -= 1;
+                suppressNextPopstate = true;
+                try {
+                    history.back();
+                } catch (e) {
+                    suppressNextPopstate = false;
+                }
+            }
+        }
+
+        window.addEventListener('popstate', () => {
+            if (pwaHistoryDepth > 0) {
+                pwaHistoryDepth -= 1;
+            }
+            if (suppressNextPopstate) {
+                suppressNextPopstate = false;
+                return;
+            }
+
+            const fullPlayer = document.getElementById('full-player');
+            if (fullPlayer && !fullPlayer.classList.contains('translate-y-full')) {
+                closeFullPlayer(true);
+                return;
+            }
+
+            const viewSettings = document.getElementById('view-settings');
+            if (viewSettings && !viewSettings.classList.contains('hidden')) {
+                closeSettings(true);
+                return;
+            }
+
+            const logoTooltip = document.getElementById('logo-tooltip');
+            if (logoTooltip && !logoTooltip.classList.contains('hidden')) {
+                if (typeof closeLogoTooltip === 'function') closeLogoTooltip();
+                else logoTooltip.classList.add('hidden');
+                return;
+            }
+
+            if (Array.isArray(navigationStack) && navigationStack.length > 1) {
+                goBackFolder(true);
+            }
+        });
+
         function openSettings() {
             document.getElementById('view-home').classList.add('hidden');
             document.getElementById('view-settings').classList.remove('hidden');
+            renderPwaShareQr();
+            pushAppHistoryStep('settings');
         }
 
-        function closeSettings() {
-            document.getElementById('view-settings').classList.add('hidden');
+        function closeSettings(fromPopstate = false) {
+            const vs = document.getElementById('view-settings');
+            const wasOpen = vs && !vs.classList.contains('hidden');
+            if (vs) vs.classList.add('hidden');
             document.getElementById('view-home').classList.remove('hidden');
+            if (!fromPopstate && wasOpen) popAppHistoryStepSilently();
         }
 
         function toggleSettings() {
@@ -560,13 +725,19 @@
         }
 
         function openFullPlayer() {
-            document.getElementById('full-player').classList.remove('translate-y-full');
+            const fp = document.getElementById('full-player');
+            const wasClosed = fp && fp.classList.contains('translate-y-full');
+            if (fp) fp.classList.remove('translate-y-full');
+            if (wasClosed) pushAppHistoryStep('full-player');
         }
-        function closeFullPlayer() {
-            document.getElementById('full-player').classList.add('translate-y-full');
+        function closeFullPlayer(fromPopstate = false) {
+            const fp = document.getElementById('full-player');
+            const wasOpen = fp && !fp.classList.contains('translate-y-full');
+            if (fp) fp.classList.add('translate-y-full');
             document.getElementById('player-menu-dropdown').classList.add('hidden');
             if (showLyricsMode) toggleLyricsView();
             if (showMetaMode) toggleMetaView();
+            if (!fromPopstate && wasOpen) popAppHistoryStepSilently();
         }
         function togglePlayerMenu() {
             document.getElementById('player-menu-dropdown').classList.toggle('hidden');
@@ -788,7 +959,10 @@
             }
         }
 
-        function goBackFolder() {
+        function goBackFolder(fromPopstate = false) {
+            if (!fromPopstate && Array.isArray(navigationStack) && navigationStack.length > 1) {
+                popAppHistoryStepSilently();
+            }
             const currentState = navigationStack[navigationStack.length - 1];
             const headerBtnIcon = document.getElementById('btn-header-starred')?.querySelector('i');
 
@@ -1083,6 +1257,7 @@
 
                     if (pushToStack) {
                         navigationStack.push({ id: dirId, name: dirName, isIndex: false, level: currentLevel, items: children });
+                        pushAppHistoryStep('folder');
                     }
                     updateBackButtonUI();
                     updateSearchPlaceholder();
@@ -1108,6 +1283,7 @@
 
         async function loadStarredView() {
             navigationStack.push({ isStarred: true, name: "Preferiti", level: 'starred', previousItems: [...currentFolderItems] });
+            pushAppHistoryStep('starred');
             updateBackButtonUI();
             updateSearchPlaceholder();
             document.getElementById('section-title').innerText = "Preferiti";
